@@ -9,6 +9,7 @@ operator_util = Operators()
 
 @app.route('/mode', methods=['GET'])
 def mode():
+    
     #return the list of all modes of transport
     maybe_modes = operator_util.get_modes()
     if maybe_modes is None:

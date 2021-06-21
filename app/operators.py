@@ -1,15 +1,23 @@
-class Operators(object):
-    def __init__(self):
-        #google sheet exists which has operator information
-        #use google sheets API to get this spreadsheet information and store it in a list of dictionaries
-        pass
-    
+import pandas as pd
 
-    def get_modes(self):
-        #return a list of dictionaries, each one representing a mode of transport
-        pass
+
+class Operators(object):
+
+    def __init__(self):
+        
+        #use pandas to read the google spreadsheet as a csv file, storing the resulting dataframe as an instance variable
+        sheet_id = "1zjKv2XGf49tSMeUenmY8NrwuSPx5xBbTUclIkf-YDkM"
+        sheet_name = "operator-info"
+        URL = 'https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}'.format(sheet_id, sheet_name)
+
+        self.df = pd.read_csv(URL, dtype={'Operator id':str, 'Mode':str})  
 
     
     def get_operator_by_id(self, operator_id):
-        #return a list of dictionaries, each one representing an operator
-        pass
+        #get row of the dataframe corresponding to the operator_id and return the name of the associated operator
+        try:
+            operator_name = self.df.loc[self.df['Operator id']==operator_id]['Operator Description'].iloc[0]
+            return operator_name
+        except:
+            return None
+        
