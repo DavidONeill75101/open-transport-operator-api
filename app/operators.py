@@ -1,29 +1,42 @@
 import pandas as pd
 import json
 
+
 class Operators(object):
 
+
     def __init__(self):
+        """Get data from google spreadsheets and store in instance variables
+        """
         
-        #use pandas to read the google spreadsheets as csv files, storing the resulting dataframes as instance variables
         operator_sheet_id = "1zjKv2XGf49tSMeUenmY8NrwuSPx5xBbTUclIkf-YDkM"
         operator_sheet_name = "operator-info"
-        operator_URL = 'https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}'.format(operator_sheet_id, operator_sheet_name)
-        self.operator_df = pd.read_csv(operator_URL, dtype={'Operator id':str, 'Mode':str})  
+        operator_URL = "https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}".format(operator_sheet_id, operator_sheet_name)
+        self.operator_df = pd.read_csv(operator_URL, dtype={"Operator id":str, "Mode":str})  
 
         mode_sheet_id = "1p3a4vFTbtY21R0V7cksn-orfAqoSIKKkHLOGrByXSMg"
         mode_sheet_name = "mode-info"
-        mode_URL = 'https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}'.format(mode_sheet_id, mode_sheet_name)
-        self.mode_df = pd.read_csv(mode_URL, dtype={'id':str})
+        mode_URL = "https://docs.google.com/spreadsheets/d/{0}/gviz/tq?tqx=out:csv&sheet={1}".format(mode_sheet_id, mode_sheet_name)
+        self.mode_df = pd.read_csv(mode_URL, dtype={"id":str})
 
 
     def get_modes(self):
+        """Return json string detailing modes of transport available in line with API specification
+        """
+
         return json.dumps(self.mode_df.to_dict("records"))
 
-
+    
     def populate_json_template(self, operator):
-        fields = ['Operator Description', 'Operator URL (homepage)', 'Operator id', 'Customer Services Contact email', 'Customer Services Contact Phone',
-        'Default Language', 'Number of Modes', 'Mode', 'Operator MIPTA URL']
+        """Generate data structure to represent operator in line with API specification
+
+        Args:
+            operator (dict): dictionary representing operator, generated from Pandas dataframe
+
+        Returns:
+            dict: dictionary representing operator in PAS 212 format
+
+        """
 
         template = {
                 "href": "",
@@ -56,39 +69,51 @@ class Operators(object):
                         "rel": "urn:X-opentransport:rels:hasNumberModes",
                         "val": ""
                     },
-                    {
-                        "rel": "urn:X-opentransport:rels:hasMode1#Code",
-                        "val": ""
-                    },
-                    {
-                        "rel": "urn:X-opentransport:rels:hasMode1#Description",
-                        "val": ""
-                    },
+                 
                     {
                         "rel": "urn:X-opentransport:rels:hasMIPTAURL",
                         "val": ""
                     }
                 ]
             }
+        
+        template["href"] = operator["Open Transport Account API URL"]
+        template["item-metadata"][0]["val"] = operator["Operator Description"]
+        template["item-metadata"][1]["val"] = operator["Operator URL (homepage)"]
+        template["item-metadata"][2]["val"] = operator["Operator id"]
+        template["item-metadata"][3]["val"] = operator["Customer Services Contact email"]
+        template["item-metadata"][4]["val"] = operator["Customer Services Contact Phone"]
+        template["item-metadata"][5]["val"] = operator["Default Language"]
+        
+        modes = operator["Mode"].split(",")
+        template["item-metadata"][6]["val"] = len(modes)
+        for i, mode in enumerate(modes):
+            mode_details = [{
+                        "rel": "urn:X-opentransport:rels:hasMode"+str(i+1)+"#Code",
+                        "val": mode
+                    },
+                    {
+                        "rel": "urn:X-opentransport:rels:hasMode"+str(i+1)+"#Description",
+                        "val": self.mode_df.loc[self.mode_df["id"]==mode]["short-desc"].iloc[0]
+                    }]
+            template["item-metadata"][-1:-1]=mode_details
 
-        template['href'] = operator['Open Transport Account API URL']
-
-        for i in range(len(fields)):
-            
-            if template[0]['item-metadata'][i]['rel']!='urn:X-opentransport:rels:hasMode1#Description':
-                template[0]['item-metadata'][i]['val'] = operator[fields[i]]
-            else:
-                template[0]['item-metadata'][i]['val'] = self.mode_df.loc[self.mode_df['id']==operator['Mode']]['short-desc'].iloc[0]
-
-        template[0]['item-metadata'][-1]['val'] = operator['Operator MIPTA URL']
+        template["item-metadata"][-1]["val"] = operator["Operator MIPTA URL"]
 
         return template
 
-
     
-    def get_operator_by_id(self, operator_id):
-        #get row of the dataframe corresponding to the operator_id and return the name of the associated operator
+    def get_operator_by_id(self, operator_id="x"):
+        """Operator lookup by ID
 
+        Args:
+            operator_id (str):passed in through query parameter to represent the id of the operator being fetched - optional
+
+        Returns:
+            str: json string representing operator details in PAS212 format
+
+        """
+        
         json_result = [
                 {
                     "catalogue-metadata": [
@@ -111,16 +136,16 @@ class Operators(object):
                 }
             ]
             
-
-        try:
-            operator = self.operator_df.loc[self.operator_df['Operator id']==operator_id]
+        operator = self.operator_df.loc[self.operator_df["Operator id"]==operator_id]    
+        if not operator.empty:
+            operator = operator.to_dict("records")[0]
             operator_info = self.populate_json_template(operator)
-            json_result[0]['items'].append(operator_info)
-            return json_result
-
-        except:
+            json_result[0]["items"].append(operator_info) 
+        else:
             operators = self.operator_df.to_dict("records")
             for operator in operators:
                 operator_info = self.populate_json_template(operator)
-                json_result[0]['items'].append(operator_info)
-            return json_result
+                json_result[0]["items"].append(operator_info)
+
+        return json.dumps(json_result)
+        
