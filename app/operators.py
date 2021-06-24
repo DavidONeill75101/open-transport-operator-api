@@ -1,6 +1,4 @@
 import pandas as pd
-import json
-
 
 class Operators(object):
 
@@ -23,8 +21,7 @@ class Operators(object):
     def get_modes(self):
         """Return json string detailing modes of transport available in line with API specification
         """
-
-        return json.dumps(self.mode_df.to_dict("records"))
+        return self.mode_df.to_dict("records")
 
     
     def populate_json_template(self, operator):
@@ -147,5 +144,5 @@ class Operators(object):
                 operator_info = self.populate_json_template(operator)
                 json_result[0]["items"].append(operator_info)
 
-        return json.dumps(json_result)
+        return json_result
         

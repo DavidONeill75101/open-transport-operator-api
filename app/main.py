@@ -1,8 +1,11 @@
 from flask import Flask
 from flask import request
+from flask import render_template
 
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+import json
 
 from operators import Operators
 
@@ -16,6 +19,10 @@ limiter = Limiter(
 operator_util = Operators()
 
 
+@app.route("/test")
+def basicTemplate():
+  return render_template("test.html")
+
 @app.route("/mode", methods=["GET"])
 @limiter.limit("1 per second")
 def mode():
@@ -24,8 +31,10 @@ def mode():
 
     maybe_modes = operator_util.get_modes()
     if maybe_modes is None:
-        return "Error Occurred", 400
-    return maybe_modes, 200
+        return "Error", 400
+        
+    return json.dumps(maybe_modes), 200
+    
 
 
 @app.route("/operator", methods=["GET"])
@@ -38,8 +47,10 @@ def operator():
         
     maybe_operator = operator_util.get_operator_by_id(id)
     if maybe_operator is None:
-        return "Error occurred", 400
-    return maybe_operator, 200
+        return "Error", 400
+        
+    return json.dumps(maybe_operator), 200
+    
 
 
 if __name__ == "__main__":
