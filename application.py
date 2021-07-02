@@ -9,7 +9,7 @@ import json
 
 from operators import Operators
 
-app = Flask(__name__)
+application = app = Flask(__name__)
 limiter = Limiter(
     app,
     key_func=get_remote_address,
