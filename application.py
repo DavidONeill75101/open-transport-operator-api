@@ -9,9 +9,9 @@ import json
 
 from operators import Operators
 
-application = app = Flask(__name__)
+application = Flask(__name__)
 limiter = Limiter(
-    app,
+    application,
     key_func=get_remote_address,
     default_limits=["200 per day", "50 per hour"]
 )
@@ -19,11 +19,16 @@ limiter = Limiter(
 operator_util = Operators()
 
 
-@app.route("/test")
-def basicTemplate():
-  return render_template("test.html")
+@application.route("/", methods=["GET"])
+@limiter.limit("1 per second")
+def root():
+    """return rot page
+    """
 
-@app.route("/mode", methods=["GET"])
+    return "Open Transport Operator-info API"
+
+       
+@application.route("/mode", methods=["GET"])
 @limiter.limit("1 per second")
 def mode():
     """mode query returns json representing all modes available or an error if unsuccessful
@@ -36,8 +41,7 @@ def mode():
     return json.dumps(maybe_modes), 200
     
 
-
-@app.route("/operator", methods=["GET"])
+@application.route("/operator", methods=["GET"])
 @limiter.limit("1 per second")
 def operator():
     """operator query returns json representing operators or an error if unsuccessful
@@ -52,7 +56,6 @@ def operator():
     return json.dumps(maybe_operator), 200
     
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    application.run()
     
