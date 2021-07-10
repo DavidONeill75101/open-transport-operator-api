@@ -2,25 +2,16 @@ from flask import Flask
 from flask import request
 from flask import render_template
 
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
 import json
 
 from operators import Operators
 
 application = Flask(__name__)
-limiter = Limiter(
-    application,
-    key_func=get_remote_address,
-    default_limits=["200 per day", "50 per hour"]
-)
 
 operator_util = Operators()
 
 
 @application.route("/", methods=["GET"])
-@limiter.limit("1 per second")
 def root():
     """return rot page
     """
@@ -29,7 +20,6 @@ def root():
 
        
 @application.route("/mode", methods=["GET"])
-@limiter.limit("1 per second")
 def mode():
     """mode query returns json representing all modes available or an error if unsuccessful
     """
@@ -42,7 +32,6 @@ def mode():
     
 
 @application.route("/operator", methods=["GET"])
-@limiter.limit("1 per second")
 def operator():
     """operator query returns json representing operators or an error if unsuccessful
     optional parameter filterString can be used to pass in id of operator to fetch
