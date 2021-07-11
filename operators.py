@@ -116,7 +116,7 @@ class Operators(object):
         return template
 
     
-    def get_operator_by_id(self, operator_id="x"):
+    def get_operator_by_id(self, operator_id):
         """Operator lookup by ID
 
         Args:
@@ -125,7 +125,7 @@ class Operators(object):
         Returns:
             str: json string representing operator details in PAS212 format
 
-        """
+        """ 
         
         json_result = [
                 {
@@ -150,15 +150,18 @@ class Operators(object):
             ]
             
         operator = self.operator_df.loc[self.operator_df["Operator id"]==operator_id]    
+        
         if not operator.empty:
             operator = operator.to_dict("records")[0]
             operator_info = self.populate_json_template(operator)
             json_result[0]["items"].append(operator_info) 
-        else:
+        elif operator.empty and operator_id is None:
             operators = self.operator_df.to_dict("records")
             for operator in operators:
                 operator_info = self.populate_json_template(operator)
                 json_result[0]["items"].append(operator_info)
+        else:
+            return None
 
         return json_result
         

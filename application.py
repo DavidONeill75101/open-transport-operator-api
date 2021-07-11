@@ -16,7 +16,6 @@ limitations under the License.
 
 from flask import Flask
 from flask import request
-from flask import render_template
 
 import json
 
@@ -29,7 +28,7 @@ operator_util = Operators()
 
 @application.route("/", methods=["GET"])
 def root():
-    """return rot page
+    """return root page
     """
 
     return "Open Transport Operator-info API"
@@ -42,7 +41,7 @@ def mode():
 
     maybe_modes = operator_util.get_modes()
     if maybe_modes is None:
-        return "Error", 400
+        return "bad input parameter", 400
         
     return json.dumps(maybe_modes), 200
     
@@ -52,11 +51,12 @@ def operator():
     """operator query returns json representing operators or an error if unsuccessful
     optional parameter filterString can be used to pass in id of operator to fetch
     """
+
     id = request.args.get("filterString")
         
     maybe_operator = operator_util.get_operator_by_id(id)
     if maybe_operator is None:
-        return "Error", 400
+        return "bad input parameter", 400
         
     return json.dumps(maybe_operator), 200
     
